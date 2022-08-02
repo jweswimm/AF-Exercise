@@ -13,6 +13,8 @@
 #include <curand_kernel.h>
 #include <iostream>
 #include "cuda_runtime.h"
+#include <thrust/host_vector.h>
+#include <thrust/device_vector.h>
 
 #define PI 3.1415926535897931f
 
@@ -28,6 +30,7 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
 
 // generate millions of random samples
 static int samples = 30e6;
+//static int samples = 10000;
 
 #ifdef AF_OPENCL
 namespace opencl
@@ -38,17 +41,14 @@ namespace cuda
 
 	//Variables
 	static unsigned int seed; //seed for curand, can be the same for each thread
-	static unsigned int count; //number of values distance < 1 away from center
-	static unsigned int block_size; //How many threads per block
-	static unsigned int grid_size; //How many blocks per grid
-	static curandState_t* states; //States for random number generation in cuda
-
-	//CUDA kernels
-	__global__ void state_init(unsigned int sseed, unsigned int ssamples, curandState_t* sstates);
+	static int block_size; //How many threads per block
+	static int grid_size; //How many blocks per grid
+	static curandState* d_states; //pointer to the states
+	static thrust::device_vector<int> count;
 
 	//Functions
 	void pi_init();
-	double pi();
+	double pi_v1();
 	void pi_reset();
 
 }
