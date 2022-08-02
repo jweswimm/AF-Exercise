@@ -57,9 +57,7 @@ int main(int argc, char* argv[])
         double t_cpu  = timeit(wrap_cpu),  e_cpu  = fabs(PI - pi_cpu());
         double t_af   = timeit(wrap_af),   e_af   = fabs(PI - pi_af());
         detail::pi_init();
-        double e_detail = fabs(PI - detail::pi_v1()); //jww swapped order of e_detail and t_detail
-        //the af::timeit() function is summing the output of pi_v1() over and over again
-        double t_detail = timeit(wrap_detail);
+        double t_detail = timeit(wrap_detail), e_detail = fabs(PI - detail::pi_v1()); 
 
         // print results
         experiment("cpu",       t_cpu,      e_cpu,      t_cpu);
