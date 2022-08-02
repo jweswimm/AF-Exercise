@@ -12,64 +12,81 @@
 
 namespace cuda
 {
-
- //State Initialization Kernel
-__global__ void state_init(unsigned int seed, unsigned int samples, curandState_t* states) {
-     /*
-     Utility: To initialize "samples" many states. These states
-     will be used to generate random numbers in the pi() function
-     Inputs: seed, number of samples, array of states(empty)
-     Output: array of states(full)
-     */
-    for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < samples; idx += gridDim.x * blockDim.x) //thread loop
-    {
-        curand_init(seed, idx, 0, &states[idx]); //args:(seed for each core, sequence of numbers, offset, state value)
-    }
-}
-
+//Initialize necessary variables, create seed, and allocate space on the device
 void pi_init()
 {
-    /*
-      TODO any initialization code you need goes here, e.g. random
-      number seeding, cudaMalloc allocations, etc.  Random number
-      _generation_ should still go in pi().
-    */
-
-    //Initialize the count of samples less than distance 1 unit away from origin
-    count = 0;
-
     //Create seed--this can be the same for each thread, see https://ianfinlayson.net/class/cpsc425/notes/cuda-random
     seed = time(0);
-
-    //We will want to create a random state for each thread, so use curandState_t* to store them
-    //Fill states in pi(), for now just declare and initialize
-    //Allocate memory on the device to have a random state for each sample
-    cudaMalloc((void**)&states, samples * sizeof(curandState_t));
 
     //Initialize block size and grid size for the kernel call
     //For now just do 1D
     block_size = 1024;
-    grid_size = ceil(double(samples) / double(1024));
+    grid_size = ceil(double(samples) / double(block_size)); //round up (block_size*grid_size = samples)
 
-    //Initialize "samples" many states
-    state_init <<<grid_size, block_size>>> (seed, samples, states);
-     gpuErrchk(cudaPeekAtLastError());
-     gpuErrchk(cudaDeviceSynchronize());
-     
+    //Allocated space on the device for the number of samples we need
+    cudaMalloc((void**)&d_states, block_size * grid_size * sizeof(curandState));
+
+    //initialize count to 0
+    count.push_back(0); 
+
 }
 
 
-double pi()
+__global__ void est_pi(int* count, unsigned int seed, int samples, curandState* states) {
+    for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < samples; idx += gridDim.x * blockDim.x) {
+
+        curand_init(seed, idx, 0, &states[idx]);
+
+        double x = curand_uniform_double(&states[idx]);
+        double y = curand_uniform_double(&states[idx]);
+
+        if (x * x + y * y < 1) { //if within unit circle
+
+            //To avoid race conditions where multiple threads try to
+            //write to the same location at the same time, we use
+            //the atomicAdd operation.
+            atomicAdd((count), 1);
+
+        }
+
+    }
+    
+}
+
+
+
+//Monte Carlo estimation of pi
+double pi_v1()
 {
     /*
-      TODO Put your code here.  You can use anything in the CUDA
-      Toolkit, including libraries, Thrust, or your own device
-      kernels, but do not use ArrayFire functions here.  If you have
-      initialization code, see pi_init().
+    Utility & Explanation: We use a Monte Carlo method to estimate pi.
+    In 2D, we stack a unit circle on a unit square. The area of the
+    unit circle is \pi r^2 and the area of the unit square is 4 r^2.
+    If we randomly generate x and y coordinates for each point, 
+    the ratio of points inside the unit circle to points outside
+    the unit circle and inside the unit square will be an excellent
+    approximation of pi.
+    I.e. (inside circle)/(outside circle) = (\pi r^2) / (4 r^2) = \pi / 4
+    <=> 4*(inside circle)/(outside circle) = \pi
+    Admittedly, this random number generation only generates positive numbers,
+    but because the unit circle and unit square are entirely symmetric across 
+    axes and we are calculating distances from the origin,
+    it doesn't change the estimation.
+
+    This function returns the estimation of pi.
     */
 
 
-    return 0.0;
+    
+    //Call kernel
+    est_pi << <grid_size, block_size >> > (thrust::raw_pointer_cast(count.data()), seed, samples, d_states);
+    gpuErrchk(cudaPeekAtLastError());
+    gpuErrchk(cudaDeviceSynchronize());
+
+    //std::cout << 4*double(count[0])/double(samples) << std::endl;
+
+
+    return 4*double(count[0])/double(samples);
 }
 
 void pi_reset()
@@ -79,6 +96,10 @@ void pi_reset()
       memory deallocation etc here.
     */
 
+    //Free d_states, as it was on the device
+    cudaFree(d_states);
+
+    //Don't need to free thrust device vector count
 }
 
 }
