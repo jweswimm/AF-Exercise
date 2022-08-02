@@ -27,7 +27,8 @@ void pi_init()
     cudaMalloc((void**)&d_states, block_size * grid_size * sizeof(curandState));
 
     //initialize count to 0
-    count.push_back(0); 
+    thrust::device_vector<int> dum(1, 0);
+    count = dum;
 
 }
 
@@ -98,6 +99,9 @@ void pi_reset()
 
     //Free d_states, as it was on the device
     cudaFree(d_states);
+    
+    //reset count to zero because af::timeit() will continue incrementing
+//    count[0] = 0;
 
     //Don't need to free thrust device vector count
 }
