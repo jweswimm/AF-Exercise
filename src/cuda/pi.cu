@@ -15,12 +15,12 @@ namespace cuda
 
  //State Initialization Kernel
 __global__ void state_init(unsigned int seed, unsigned int samples, curandState_t* states) {
- /*
- Utility: To initialize "samples" many states. These states
-    will be used to generate random numbers in the pi() function
- Inputs: seed, number of samples, array of states(empty)
- Output: array of states(full)
- */
+     /*
+     Utility: To initialize "samples" many states. These states
+     will be used to generate random numbers in the pi() function
+     Inputs: seed, number of samples, array of states(empty)
+     Output: array of states(full)
+     */
     for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < samples; idx += gridDim.x * blockDim.x) //thread loop
     {
         curand_init(seed, idx, 0, &states[idx]); //args:(seed for each core, sequence of numbers, offset, state value)
@@ -35,32 +35,27 @@ void pi_init()
       _generation_ should still go in pi().
     */
 
-    //Initialize the number of samples less than distance 1 unit away from origin
+    //Initialize the count of samples less than distance 1 unit away from origin
     count = 0;
 
     //Create seed--this can be the same for each thread, see https://ianfinlayson.net/class/cpsc425/notes/cuda-random
     seed = time(0);
 
     //We will want to create a random state for each thread, so use curandState_t* to store them
-    //Fill states in pi(), for now just declare
-    curandState_t* states;
-
+    //Fill states in pi(), for now just declare and initialize
     //Allocate memory on the device to have a random state for each sample
     cudaMalloc((void**)&states, samples * sizeof(curandState_t));
 
-    //Block size
+    //Initialize block size and grid size for the kernel call
+    //For now just do 1D
     block_size = 1024;
     grid_size = ceil(double(samples) / double(1024));
+
     //Initialize "samples" many states
     state_init <<<grid_size, block_size>>> (seed, samples, states);
      gpuErrchk(cudaPeekAtLastError());
      gpuErrchk(cudaDeviceSynchronize());
      
-
-
-
-
-
 }
 
 
