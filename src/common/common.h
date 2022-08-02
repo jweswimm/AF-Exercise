@@ -41,6 +41,7 @@ namespace cuda
 	static unsigned int count; //number of values distance < 1 away from center
 	static unsigned int block_size; //How many threads per block
 	static unsigned int grid_size; //How many blocks per grid
+	static curandState_t* states; //States for random number generation in cuda
 
 	//CUDA kernels
 	__global__ void state_init(unsigned int sseed, unsigned int ssamples, curandState_t* sstates);
