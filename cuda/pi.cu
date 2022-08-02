@@ -9,8 +9,23 @@
 
 #include <common.h>
 
+
 namespace cuda
 {
+
+ //State Initialization Kernel
+__global__ void state_init(unsigned int seed, unsigned int samples, curandState_t* states) {
+ /*
+ Utility: To initialize "samples" many states. These states
+    will be used to generate random numbers in the pi() function
+ Inputs: seed, number of samples, array of states(empty)
+ Output: array of states(full)
+ */
+    for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < samples; idx += gridDim.x * blockDim.x) //thread loop
+    {
+        curand_init(seed, idx, 0, &states[idx]); //args:(seed for each core, sequence of numbers, offset, state value)
+    }
+}
 
 void pi_init()
 {
@@ -20,47 +35,34 @@ void pi_init()
       _generation_ should still go in pi().
     */
 
-    //Set seed, (seconds since 00:00 hours, Jan 1, 1970 UTC)
-    srand(time(0));
+    //Initialize the number of samples less than distance 1 unit away from origin
+    count = 0;
 
-    //Set count to 0
-    int h_count = 0;
+    //Create seed--this can be the same for each thread, see https://ianfinlayson.net/class/cpsc425/notes/cuda-random
+    seed = time(0);
 
-    //Set block_size to maximum value of 1024 so we can fit all 30e6 samples in one kernel call
-    int block_size = 1024;
-    int grid_size = ceil(float(samples)/float(1024)); //roundup(30e6/1024)
+    //We will want to create a random state for each thread, so use curandState_t* to store them
+    //Fill states in pi(), for now just declare
+    curandState_t* states;
 
-    //We want to have x and y values for each sample
-    //allocate device memory for x, y, and count
-    float *d_x, *d_y, *d_count;
-    cudaMalloc(&d_x, samples*sizeof(float));
-    cudaMalloc(&d_y, samples*sizeof(float));
-    cudaMalloc(&d_count, sizeof(int));
+    //Allocate memory on the device to have a random state for each sample
+    cudaMalloc((void**)&states, samples * sizeof(curandState_t));
 
-    //copy 0 to d_count
-    cudaMemcpy(d_count, h_count, sizeof(int),cudaMemcpyHostToDevice);
+    //Block size
+    block_size = 1024;
+    grid_size = ceil(double(samples) / double(1024));
+    //Initialize "samples" many states
+    state_init <<<grid_size, block_size>>> (seed, samples, states);
+     gpuErrchk(cudaPeekAtLastError());
+     gpuErrchk(cudaDeviceSynchronize());
+     
+
+
+
+
 
 }
 
-//Idea 1: do all calculations in the same cuda kernel
-__global__ void calculate_pi(int samples, int* count, float* x, float* y){
-  //loop through samples (30e6)
-  for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < samples; idx += gridDim.x * blockDim.x) 
-	{
-    x[idx] = float(rand()) / RAND_MAX;
-    y[idx] = float(rand()) / RAND_MAX;
-    if (x[ix]*x[idx] + y[idx]*y[idx] < 1) { //length of vector (x,y)
-      //We want to avoid anything like a race condition, so we can use atomicAdd
-      //this allows us to increment the count correctly.
-      //Without atomicAdd, it might be possible for count to be much lower than it actually is
-      //because the value at count might be overwritten at the same time by more than one thread
-      atomicAdd(&count,1);
-    }
-  }
-}
-
-//Idea 2: calculate x and y in a separate kernel
-//Idea 3: just use thrust functions to calculate the random values and get pi
 
 double pi()
 {
@@ -72,16 +74,7 @@ double pi()
     */
 
 
-  //Call cuda kernel
-  calculate_pi <<<block_size, grid_size>>> (samples, d_count, d_x, d_y);
-	gpuErrchk(cudaPeekAtLastError());
-	gpuErrchk(cudaDeviceSynchronize());
-
-  //Copy count back MIGHT NOT BE NECESSARY, MAYBE KEEP COUNT ON CPU
-  cudaMemcpy(h_count, d_count, sizeof(int), cudaMemcpyDeviceToHost);
-
-  //return pi
-  return 4.0 * h_count / samples;
+    return 0.0;
 }
 
 void pi_reset()
@@ -91,10 +84,6 @@ void pi_reset()
       memory deallocation etc here.
     */
 
-  //Free memory on device
-  cudaFree(d_count);
-  cudaFree(d_x);
-  cudaFree(d_y);
 }
 
 }
