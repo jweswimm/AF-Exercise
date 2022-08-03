@@ -40,6 +40,7 @@ static double pi_af()
 static void wrap_cpu()      { pi_cpu();     }
 static void wrap_af()       { pi_af();      }
 static void wrap_detail()   { detail::pi_v1(); }
+static void wrap_detail2()   { detail::pi_v2(); }
 
 static void experiment(const char *method, double time, double error, double cpu_time)
 {
@@ -57,14 +58,18 @@ int main(int argc, char* argv[])
         double t_cpu  = timeit(wrap_cpu),  e_cpu  = fabs(PI - pi_cpu());
         double t_af   = timeit(wrap_af),   e_af   = fabs(PI - pi_af());
         detail::pi_init_v1();
+        detail::pi_init_v2();
         double t_detail = timeit(wrap_detail), e_detail = fabs(PI - detail::pi_v1()); 
+        double t_detail2 = timeit(wrap_detail2), e_detail2 = fabs(PI - detail::pi_v2()); 
 
         // print results
         experiment("cpu",       t_cpu,      e_cpu,      t_cpu);
         experiment("arrayfire", t_af,       e_af,       t_cpu);
         experiment("detail",    t_detail,   e_detail,   t_cpu);
+        experiment("detail2",    t_detail2,   e_detail2,   t_cpu);
 
         detail::pi_reset_v1();
+        detail::pi_reset_v2();
     } catch (af::exception& e) {
         fprintf(stderr, "%s\n", e.what());
         throw;
