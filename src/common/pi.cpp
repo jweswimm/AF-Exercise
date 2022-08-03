@@ -35,7 +35,6 @@ static double pi_af()
     return 4 * sum<float>(x*x + y*y <= 1) / samples;
 }
 
-
 // void wrappers for timeit()
 static void wrap_cpu()      { pi_cpu();     }
 static void wrap_af()       { pi_af();      }
