@@ -38,7 +38,7 @@ namespace cuda
         cudaMalloc((void**)&d_states, samples * sizeof(curandState));
 
         //Call curand_init kernel
-        random_init << <grid_size, block_size >> > (seed, samples, d_states);
+        random_init <<< grid_size, block_size >>> (seed, samples, d_states);
 
     }
 
@@ -57,7 +57,7 @@ namespace cuda
                 //To avoid race conditions where multiple threads try to
                 //write to the same location at the same time, we use
                 //the atomicAdd operation.
-                atomicAdd((count), 1);
+                atomicAdd(count, 1);
 
             }
 
@@ -98,7 +98,7 @@ namespace cuda
         // to the device pointer
 
         //Call kernel
-        est_pi << <grid_size, block_size >> > (thrust::raw_pointer_cast(count.data()), seed, samples, d_states);
+        est_pi <<< grid_size, block_size >>> (thrust::raw_pointer_cast(count.data()), seed, samples, d_states);
         gpuErrchk(cudaPeekAtLastError());
         gpuErrchk(cudaDeviceSynchronize());
 
@@ -128,7 +128,7 @@ namespace cuda
             long long int X = pow(-262537412640768000, idx);
 
                 //Calculate sum and avoid race conditions
-                d_atomicAdd((sum), (M * L) / X);
+                d_atomicAdd(sum, M * L / X);
 
         }
 
@@ -170,7 +170,7 @@ namespace cuda
         // to the device pointer
 
         //Call kernel
-        chudnovsky << < grid_size2, block_size2 >> > (N, thrust::raw_pointer_cast(sum.data()));
+        chudnovsky <<< grid_size2, block_size2 >>> (N, thrust::raw_pointer_cast(sum.data()));
 
         return C * (1/sum[0]);
 
