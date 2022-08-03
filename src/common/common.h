@@ -6,8 +6,6 @@
  * The complete license agreement can be obtained at:
  * http://arrayfire.com/licenses/BSD-3-Clause
  ********************************************************/
-#pragma once
-
 #include <stdio.h>
 #include <curand.h>
 #include <curand_kernel.h>
@@ -16,9 +14,9 @@
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
 
-
 #define PI 3.1415926535897931f
 
+//Define some error checks for cuda kernels
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
 {
@@ -31,7 +29,6 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
 
 // generate millions of random samples
 static int samples = 30e6;
-//static int samples = 10000;
 
 #ifdef AF_OPENCL
 namespace opencl
@@ -44,17 +41,17 @@ namespace cuda
 	static unsigned int seed; //seed for curand, can be the same for each thread
 	static int block_size; //How many threads per block
 	static int grid_size; //How many blocks per grid
+	static int block_size2; //How many threads per block
+	static int grid_size2; //How many blocks per grid
 	static curandState* d_states; //pointer to the states
 
 	//variables for v2
-	static thrust::device_vector<double> sum_components;
-	static thrust::device_vector<double> m;
-	static thrust::device_vector<double> l;
-	static thrust::device_vector<double> x;
 	static unsigned int N;
 	static double C;
 
-
+	//Helper Functions
+	__device__ double d_atomicAdd(double* address, double val);
+	__device__ long long int fact(int n);
 
 	//Cuda Kernels
 	__global__ void random_init(unsigned int seed, int samples, curandState* states);
@@ -68,10 +65,6 @@ namespace cuda
 	void pi_init_v2();
 	double pi_v2();
 	void pi_reset_v2();
-
-
-
-	
 
 }
 
