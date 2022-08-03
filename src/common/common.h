@@ -45,10 +45,24 @@ namespace cuda
 	static int grid_size; //How many blocks per grid
 	static curandState* d_states; //pointer to the states
 
+	//Cuda Kernels
+	__global__ void random_init(unsigned int seed, int samples, curandState* states);
+	__global__ void est_pi(int* count, unsigned int seed, int samples, curandState* states);
+
 	//Functions
-	void pi_init();
+	void pi_init_v1();
 	double pi_v1();
-	void pi_reset();
+	void pi_reset_v1();
+
+	void pi_init_v2();
+	double pi_v2();
+	void pi_reset_v2();
+
+	//variables for v2
+	//thrust::device_vector<double> sum_components;
+
+
+	
 
 }
 
