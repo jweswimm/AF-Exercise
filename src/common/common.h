@@ -27,8 +27,16 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
    }
 }
 
+//Define some typedefs so I don't have to write long long all the time
+//typedef long long int i64;
+//typedef unsigned long long int u64;
+//Currently runs into issues with d_atomicAdd
+
 // generate millions of random samples
 static int samples = 30e6;
+
+// Number of elements to sum for pi_v2
+static int N = 16;
 
 #ifdef AF_OPENCL
 namespace opencl
@@ -46,7 +54,6 @@ namespace cuda
 	static curandState* d_states; //pointer to the states
 
 	//variables for v2
-	static unsigned int N;
 	static double C;
 
 	//Helper Functions
