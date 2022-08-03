@@ -44,7 +44,6 @@ namespace cuda
 	static int block_size; //How many threads per block
 	static int grid_size; //How many blocks per grid
 	static curandState* d_states; //pointer to the states
-	static thrust::device_vector<int> count;
 
 	//Functions
 	void pi_init();
