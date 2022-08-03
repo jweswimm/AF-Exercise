@@ -16,6 +16,7 @@
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
 
+
 #define PI 3.1415926535897931f
 
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
@@ -45,6 +46,16 @@ namespace cuda
 	static int grid_size; //How many blocks per grid
 	static curandState* d_states; //pointer to the states
 
+	//variables for v2
+	static thrust::device_vector<double> sum_components;
+	static thrust::device_vector<double> m;
+	static thrust::device_vector<double> l;
+	static thrust::device_vector<double> x;
+	static unsigned int N;
+	static double C;
+
+
+
 	//Cuda Kernels
 	__global__ void random_init(unsigned int seed, int samples, curandState* states);
 	__global__ void est_pi(int* count, unsigned int seed, int samples, curandState* states);
@@ -58,8 +69,6 @@ namespace cuda
 	double pi_v2();
 	void pi_reset_v2();
 
-	//variables for v2
-	//thrust::device_vector<double> sum_components;
 
 
 	
