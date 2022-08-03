@@ -56,7 +56,7 @@ int main(int argc, char* argv[])
         info();
         double t_cpu  = timeit(wrap_cpu),  e_cpu  = fabs(PI - pi_cpu());
         double t_af   = timeit(wrap_af),   e_af   = fabs(PI - pi_af());
-        detail::pi_init();
+        detail::pi_init_v1();
         double t_detail = timeit(wrap_detail), e_detail = fabs(PI - detail::pi_v1()); 
 
         // print results
@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
         experiment("arrayfire", t_af,       e_af,       t_cpu);
         experiment("detail",    t_detail,   e_detail,   t_cpu);
 
-        detail::pi_reset();
+        detail::pi_reset_v1();
     } catch (af::exception& e) {
         fprintf(stderr, "%s\n", e.what());
         throw;
