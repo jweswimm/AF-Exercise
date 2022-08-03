@@ -26,10 +26,6 @@ void pi_init()
     //Allocated space on the device for the number of samples we need
     cudaMalloc((void**)&d_states, block_size * grid_size * sizeof(curandState));
 
-    //initialize count to 0
-    thrust::device_vector<int> dum(1, 0);
-    count = dum;
-
 }
 
 
@@ -77,15 +73,13 @@ double pi_v1()
     This function returns the estimation of pi.
     */
 
+    //Initialize count to 0
+    thrust::device_vector<int> count(1, 0);
 
-    
     //Call kernel
     est_pi << <grid_size, block_size >> > (thrust::raw_pointer_cast(count.data()), seed, samples, d_states);
     gpuErrchk(cudaPeekAtLastError());
     gpuErrchk(cudaDeviceSynchronize());
-
-    //std::cout << 4*double(count[0])/double(samples) << std::endl;
-
 
     return 4*double(count[0])/double(samples);
 }
@@ -100,8 +94,6 @@ void pi_reset()
     //Free d_states, as it was on the device
     cudaFree(d_states);
     
-    //reset count to zero because af::timeit() will continue incrementing
-//    count[0] = 0;
 
     //Don't need to free thrust device vector count
 }
