@@ -175,8 +175,8 @@ namespace cuda
         x = dum;
         x[0] = 1;
 
-        block_size = 1024;
-        grid_size = ceil(float(N) / float(block_size));
+        block_size2 = 16;
+        grid_size2 = ceil(float(N) / float(block_size));
 
 
     }
@@ -190,7 +190,7 @@ namespace cuda
 
         thrust::device_vector<double> sum(1, 0.0);
 
-        chudnovsky << < grid_size, block_size >> > (N, thrust::raw_pointer_cast(m.data()),
+        chudnovsky << < grid_size2, block_size2 >> > (N, thrust::raw_pointer_cast(m.data()),
             thrust::raw_pointer_cast(l.data()), thrust::raw_pointer_cast(x.data()),
                 thrust::raw_pointer_cast(sum.data()));
 
@@ -205,3 +205,5 @@ namespace cuda
 
     }
 }
+
+
